@@ -24,7 +24,10 @@ Attualmente supporta nativamente il download dai seguenti portali italiani:
 ## 🚀 Come si usa?
 
 1. **Avvia l'app:** Lancia l'eseguibile scaricato oppure esegui il programma da terminale.
-2. **Incolla il Link:** Copia l'URL della pagina dell'anime da *AnimeSaturn* o del manga da *MangaWorld* e incollalo nella barra di ricerca.
+2. **Incolla il Link:** Devi usare il link della **pagina principale dell'anime o del manga** (quella dove c'è la trama e la lista di tutti gli episodi/capitoli).
+   - Esempio AnimeSaturn: `https://www.animesaturn.cx/anime/One-Piece-Sub-ITA-a`
+   - Esempio MangaWorld: `https://www.mangaworld.mx/manga/1708/one-piece`
+   Incolla l'URL nella barra di ricerca dell'applicazione.
 3. **Analizza:** Clicca sul pulsante per analizzare il link. L'app troverà in automatico tutti i capitoli o episodi disponibili.
 4. **Seleziona e Scarica:** Inserisci il range (es. `1-5` per i primi 5 episodi) e clicca Scarica! Troverai i tuoi file scaricati e ordinati automaticamente sul tuo computer.
 
