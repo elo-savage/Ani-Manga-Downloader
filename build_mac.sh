@@ -8,6 +8,6 @@ rm -rf build dist *.spec
 
 echo "Building executable for macOS..."
 # Use ':' as separator for data on macOS/Linux
-pyinstaller --noconfirm --windowed --name "Universal_Downloader" --add-data "static:static" app.py
+pyinstaller --noconfirm --windowed --name "Universal_Downloader" --icon "icona.icns" --add-data "static:static" app.py
 
 echo "Build complete! You can find 'Universal_Downloader.app' in the 'dist' folder."
