@@ -11,7 +11,7 @@ A cross-platform desktop application built with Python (Flask & pywebview) and a
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/Universal_Downloader.git
+   git clone https://github.com/elo-savage/Ani-Manga-Downloader.git
    cd Universal_Downloader
    ```
 
