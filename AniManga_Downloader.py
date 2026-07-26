@@ -8,6 +8,7 @@ Accetta link misti AnimeSaturn e MangaWorld, chiede intervalli e scarica tutto.
 import os
 import re
 import io
+import base64
 import logging
 import tempfile
 import shutil
@@ -123,21 +124,75 @@ def _anime_get_watch_link(ep_url: str) -> str | None:
     return None
 
 
-def _anime_get_final_watch_url(intermediate_url: str) -> str | None:
-    """Segue i redirect fino all'URL finale /watch."""
-    parsed = urlparse(intermediate_url)
-    base_url = f"{parsed.scheme}://{parsed.netloc}"
+def _anime_xor_decode(b64: str, key: str) -> str:
+    """Decodifica una stringa base64 + XOR ciclico con `key`.
 
-    r = _anime_session.get(intermediate_url, allow_redirects=True, timeout=HTTP_TIMEOUT)
+    È lo stesso schema usato dal player embed di saturncdn per offuscare
+    l'URL dello stream nel JSON della playlist (la funzione `dec()` lato JS)."""
+    if not b64:
+        return ""
+    data = base64.b64decode(b64)
+    k = (key or "as").encode()
+    return "".join(chr(data[i] ^ k[i % len(k)]) for i in range(len(data)))
+
+
+def _anime_resolve_stream(watch_url: str) -> tuple[str, str] | None:
+    """Dalla pagina di visione (quella con l'iframe `play.saturncdn.net/embed/...`)
+    ricava l'URL reale dello stream HLS (.m3u8) e il referer da passare a yt-dlp.
+
+    Flusso attuale di AnimeSaturn:
+        pagina /anime/<slug>/ep-N -> <iframe src=".../embed/<id>?token=...&expires=...">
+        embed page                -> window.__E = {i:<id>, k:"<token>", e:<expires>}
+        GET /embed/<id>/playlist?token=...&expires=... -> JSON {d,p,t} offuscato
+        dec(JSON.d, token)        -> https://.../playlist.m3u8
+
+    Restituisce (stream_url, referer) oppure None se qualcosa non si risolve.
+    """
+    # 1. Pagina di visione -> iframe del player
+    r = _anime_session.get(watch_url, timeout=HTTP_TIMEOUT)
     r.raise_for_status()
-    if "/watch" in r.url:
-        return r.url
     soup = BeautifulSoup(r.text, "html.parser")
-    a = soup.find("a", href=re.compile("/watch"))
-    if a:
-        href = a["href"].strip()
-        return href if href.startswith("http") else f"{base_url}{href}"
-    return None
+    iframe = (soup.find("iframe", id="watch-iframe")
+              or soup.find("iframe", src=re.compile(r"saturncdn|/embed/")))
+    if not iframe or not iframe.get("src"):
+        return None
+    embed_url = iframe["src"].strip()
+    if embed_url.startswith("//"):
+        embed_url = "https:" + embed_url
+
+    # 2. Pagina embed -> parametri (id, token, expires) in window.__E
+    r2 = _anime_session.get(embed_url, headers={"Referer": watch_url}, timeout=HTTP_TIMEOUT)
+    r2.raise_for_status()
+    m = re.search(r"window\.__E\s*=\s*\{([^}]*)\}", r2.text)
+    if not m:
+        return None
+    conf = m.group(1)
+    m_id = re.search(r"i:\s*(\d+)", conf)
+    m_key = re.search(r'k:\s*"([^"]+)"', conf)
+    m_exp = re.search(r"e:\s*(\d+)", conf)
+    if not (m_id and m_key):
+        return None
+    eid, token = m_id.group(1), m_key.group(1)
+    expires = m_exp.group(1) if m_exp else ""
+
+    # 3. Endpoint playlist -> JSON con la sorgente cifrata
+    parsed = urlparse(embed_url)
+    base = f"{parsed.scheme}://{parsed.netloc}"
+    playlist_url = f"{base}/embed/{eid}/playlist?token={token}&expires={expires}"
+    r3 = _anime_session.get(playlist_url, headers={"Referer": embed_url}, timeout=HTTP_TIMEOUT)
+    r3.raise_for_status()
+    try:
+        data = r3.json()
+    except ValueError:
+        return None
+
+    # 4. Decodifica la sorgente (XOR con il token)
+    stream = _anime_xor_decode(data.get("d", ""), token)
+    if not stream:
+        return None
+    if stream.startswith("youtube/"):  # alcuni episodi puntano a YouTube
+        stream = "https://www.youtube.com/watch?v=" + stream[len("youtube/"):]
+    return stream, embed_url
 
 
 def _anime_download_video(ep_url: str, filepath: str, progress_cb=None, stop_event=None) -> None:
@@ -151,16 +206,17 @@ def _anime_download_video(ep_url: str, filepath: str, progress_cb=None, stop_eve
         if progress_cb: progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Link streaming non trovato per {os.path.basename(filepath)}"})
         else: print(f"[WARN] Link streaming non trovato per {ep_url}")
         return
-    final = _anime_get_final_watch_url(inter)
-    if not final:
-        if progress_cb: progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Player non risolto (URL video non trovato) per {os.path.basename(filepath)}"})
+    resolved = _anime_resolve_stream(inter)
+    if not resolved:
+        if progress_cb: progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Player non risolto (stream non trovato) per {os.path.basename(filepath)}"})
         else: print(f"[WARN] Player non risolto per {ep_url}")
         return
+    stream_url, referer = resolved
 
     if progress_cb: progress_cb({"type": "anime_start", "file": os.path.basename(filepath)})
     else: print(f"[↓] Scarico {os.path.basename(filepath)}")
-    
-    cmd = ["yt-dlp", "--newline", "--no-warnings", "-o", filepath, final]
+
+    cmd = ["yt-dlp", "--newline", "--no-warnings", "--referer", referer, "-o", filepath, stream_url]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     
     for line in process.stdout:
