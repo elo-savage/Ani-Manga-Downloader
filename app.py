@@ -13,10 +13,10 @@ except ImportError:
     # Facciamo finta di poter continuare in headless/mock se serve per la verifica statica,
     # ma in genere usciamo se non c'è webview.
 
-from Universal_Downloader import (
+from AniManga_Downloader import (
     _is_anime_link, _is_manga_link, extract_manga_name, 
     anime_estrai_episodi, anime_download, MangaDownloader,
-    manga_rename_decimal_versions, MANGA_MAX_THREADS
+    MANGA_MAX_THREADS
 )
 
 class Api:
@@ -114,13 +114,35 @@ class Api:
                 try:
                     chapters = item.get("chapters", [])
                     selected = [idx for idx in selection if 1 <= idx <= len(chapters)]
-                    for idx in selected:
+                    total_selected = len(selected)
+                    
+                    for pos, idx in enumerate(selected, 1):
                         if stop_event.is_set(): break
                         slug, chapter_url = chapters[idx - 1]
-                        dl.download_chapter(slug, chapter_url, idx)
+                        
+                        # Notifica UI del progresso tra capitoli
+                        self.on_progress({
+                            "type": "manga_chapter_progress",
+                            "chapter": slug,
+                            "current_chapter": pos,
+                            "total_chapters": total_selected,
+                            "message": f"Capitolo {slug} ({pos}/{total_selected})"
+                        })
+                        
+                        try:
+                            dl.download_chapter(slug, chapter_url, idx)
+                        except Exception as ch_err:
+                            # Errore su un singolo capitolo: logga ma continua con gli altri
+                            self.on_progress({
+                                "type": "manga_chapter_error",
+                                "chapter": slug,
+                                "current_chapter": pos,
+                                "total_chapters": total_selected,
+                                "message": f"Errore cap. {slug}: {ch_err}"
+                            })
+                            continue
                 finally:
                     dl.close()
-                    manga_rename_decimal_versions(out)
                     if not stop_event.is_set():
                         self.on_progress({"type": "manga_series_done", "name": name})
                         
@@ -143,8 +165,15 @@ def main():
             height=800,
             background_color='#f9f9f9'
         )
+        
+        def on_closed():
+            # Forza l'arresto immediato di tutti i thread (inclusi quelli di download)
+            api.stop_download()
+            os._exit(0)
+
+        window.events.closed += on_closed
         api.set_window(window)
-        webview.start(debug=True)
+        webview.start(debug=False)
     except ImportError:
         print("Scusa, pywebview non è installato in questa istanza Python.")
         print("Tuttavia l'app è pronta! Basta installarlo ed eseguire questo file.")

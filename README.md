@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🛸 Universal Downloader (Ani-Manga)</h1>
+  <h1>🛸 AniManga Downloader (Ani-Manga)</h1>
   <p><strong>Un'applicazione desktop neo-brutalista per scaricare i tuoi Anime e Manga preferiti!</strong></p>
   <p><i>Costruito interamente tramite <b>Vibecoding</b> 🎵✨</i></p>
 </div>
@@ -8,7 +8,7 @@
 
 ## 📖 Cosa fa questo programma?
 
-Universal Downloader è un'applicazione desktop dal design moderno e accattivante (stile Neo-Brutalista) che ti permette di scaricare in massa capitoli di manga ed episodi di anime. Ti basta incollare il link, selezionare i capitoli o gli episodi che ti interessano e lasciare che il programma faccia il resto, organizzando tutto in comode cartelle.
+AniManga Downloader è un'applicazione desktop dal design moderno e accattivante (stile Neo-Brutalista) che ti permette di scaricare in massa capitoli di manga ed episodi di anime. Ti basta incollare il link, selezionare i capitoli o gli episodi che ti interessano e lasciare che il programma faccia il resto, organizzando tutto in comode cartelle.
 
 Attualmente supporta nativamente il download dai seguenti portali italiani:
 - 📚 **MangaWorld** (Manga)
