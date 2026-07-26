@@ -83,12 +83,21 @@ def anime_estrai_episodi(url_anime: str) -> list[str]:
         print("Errore nel caricamento della pagina anime.")
         return []
 
+    # Slug dell'anime (es. "akane-banashi-ita-CYk2T") per prendere SOLO i suoi
+    # episodi ed escludere i link "consigliati" ad altri anime nella pagina.
+    m_slug = re.search(r"/anime/([^/]+)", url_anime)
+    slug = re.escape(m_slug.group(1)) if m_slug else r"[^/]+"
+
+    # AnimeSaturn usa /episode/<slug>/ep-N (formato attuale) oppure il vecchio
+    # /ep/<nome>-ep-N. Supportiamo entrambi.
+    ep_pattern = re.compile(rf"/episode/{slug}/ep-\d+|/ep/.+-ep-\d+")
+
     soup = BeautifulSoup(r.text, "html.parser")
     episodi = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
-        if re.search(r"/ep/.+-ep-\d+", href):
-            if href.startswith("/ep/"):
+        if ep_pattern.search(href):
+            if href.startswith("/"):
                 href = f"{base_url}{href}"
             episodi.append(href)
 
@@ -139,11 +148,15 @@ def _anime_download_video(ep_url: str, filepath: str, progress_cb=None, stop_eve
         return
     inter = _anime_get_watch_link(ep_url)
     if not inter:
+        if progress_cb: progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Link streaming non trovato per {os.path.basename(filepath)}"})
+        else: print(f"[WARN] Link streaming non trovato per {ep_url}")
         return
     final = _anime_get_final_watch_url(inter)
     if not final:
+        if progress_cb: progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Player non risolto (URL video non trovato) per {os.path.basename(filepath)}"})
+        else: print(f"[WARN] Player non risolto per {ep_url}")
         return
-    
+
     if progress_cb: progress_cb({"type": "anime_start", "file": os.path.basename(filepath)})
     else: print(f"[↓] Scarico {os.path.basename(filepath)}")
     
@@ -169,8 +182,11 @@ def _anime_download_video(ep_url: str, filepath: str, progress_cb=None, stop_eve
                 })
                 
     process.wait()
-    if progress_cb and process.returncode == 0:
-        progress_cb({"type": "anime_done", "file": os.path.basename(filepath)})
+    if progress_cb:
+        if process.returncode == 0:
+            progress_cb({"type": "anime_done", "file": os.path.basename(filepath)})
+        elif not (stop_event and stop_event.is_set()):
+            progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Download fallito (yt-dlp) per {os.path.basename(filepath)}"})
 
 
 def anime_download(url: str, episodi: list[str], selezione: list[int], progress_cb=None, stop_event=None) -> None:
@@ -191,11 +207,18 @@ def anime_download(url: str, episodi: list[str], selezione: list[int], progress_
             if not os.path.exists(filepath):
                 to_download.append((episodi_filtrati[i - 1], filepath))
 
+    # Comunica alla UI quanti episodi verranno scaricati davvero: così la barra
+    # mostra un progresso AGGREGATO (X/N) invece di saltare tra i download paralleli.
+    if progress_cb:
+        progress_cb({"type": "anime_series_start", "total": len(to_download), "name": nome_cartella})
+
     if not to_download:
         print(f"[INFO] Tutti gli episodi di '{nome_cartella}' già scaricati.")
+        if progress_cb:
+            progress_cb({"type": "anime_series_done", "name": nome_cartella})
         return
 
-    # Download parallelo (4 episodi contemporanei)
+    # Download parallelo (max 4 episodi contemporanei)
     max_threads = min(ANIME_MAX_THREADS, len(to_download))
     if not progress_cb: print(f"[INFO] Avvio download di {len(to_download)} episodi ({max_threads} paralleli)...")
     

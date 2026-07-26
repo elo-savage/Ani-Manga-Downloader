@@ -339,6 +339,9 @@
     };
 
     let currentData = null;
+    // Stato per il progresso AGGREGATO degli anime (download in parallelo):
+    // animeState[index] = { total, completed, errors, active: {file: frazione 0..1} }
+    const animeState = {};
 
     const fetchBtn = document.getElementById('fetchBtn');
     const urlInput = document.getElementById('urlInput');
@@ -499,6 +502,42 @@
         document.getElementById(`end_${index}`).disabled = true;
     }
 
+    // Progresso anime aggregato: la barra riflette (episodi completati + frazioni
+    // in corso) / totale, invece di saltare tra i 4 download paralleli.
+    function renderAnimeProgress(index, data) {
+        const st = animeState[index];
+        if (!st) return;
+        const total = st.total || 1;
+        const activeSum = Object.values(st.active).reduce((a, b) => a + b, 0);
+        const overall = Math.min(((st.completed + activeSum) / total) * 100, 99);
+        document.getElementById(`progress_${index}`).style.width = overall + '%';
+        document.getElementById(`status_right_${index}`).textContent = `${st.completed}/${st.total} ep`;
+        const inflight = Object.keys(st.active);
+        document.getElementById(`status_left_${index}`).textContent = inflight.length
+            ? `${inflight.length} in download: ${inflight.join(', ')}`
+            : `${st.completed}/${st.total} episodi completati`;
+        if (data && data.type === "anime_progress") {
+            document.getElementById(`status_bottom_${index}`).innerHTML =
+                `<span>V: ${data.speed}</span><span>ETA: ${data.eta}</span>`;
+        }
+    }
+
+    // Stato di errore riusabile (interruzione, player non risolto, download fallito).
+    function showCardError(index, message) {
+        const card = document.getElementById(`card_${index}`);
+        card.dataset.state = 'error';
+        card.removeAttribute('data-active');
+        const statusLeft = document.getElementById(`status_left_${index}`);
+        statusLeft.textContent = message || "Errore / Interrotto";
+        statusLeft.classList.add("text-error");
+        const badge = document.getElementById(`badge_${index}`);
+        if (badge) { badge.textContent = 'ERRORE'; badge.className = 'badge badge--error'; }
+        const btn = document.getElementById(`btn_${index}`);
+        btn.textContent = 'RIPROVA';
+        btn.className = 'btn btn--block';
+        document.getElementById(`progress_${index}`).className = 'progress__fill progress__fill--error';
+    }
+
     window.updateProgress = function (data) {
         const activeCard = document.querySelector('article[data-active="true"]');
         if (!activeCard) return;
@@ -509,11 +548,34 @@
         const statusRight = document.getElementById(`status_right_${index}`);
         const statusBottom = document.getElementById(`status_bottom_${index}`);
 
-        if (data.type === "anime_progress") {
-            fill.style.width = data.percent + '%';
-            statusLeft.textContent = data.file;
-            statusRight.textContent = data.percent.toFixed(1) + '%';
-            statusBottom.innerHTML = `<span>V: ${data.speed}</span><span>ETA: ${data.eta}</span>`;
+        if (data.type === "anime_series_start") {
+            animeState[index] = { total: data.total, completed: 0, errors: 0, active: {} };
+            fill.style.width = "0%";
+            statusLeft.textContent = data.total ? `0/${data.total} episodi` : "Nessun nuovo episodio da scaricare";
+            statusRight.textContent = data.total ? `0/${data.total}` : "—";
+            statusBottom.innerHTML = "<span>-</span><span>-</span>";
+        }
+        else if (data.type === "anime_start") {
+            const st = animeState[index];
+            if (st) st.active[data.file] = 0;
+            renderAnimeProgress(index);
+        }
+        else if (data.type === "anime_progress") {
+            const st = animeState[index];
+            if (st) st.active[data.file] = data.percent / 100;
+            renderAnimeProgress(index, data);
+        }
+        else if (data.type === "anime_skip") {
+            const st = animeState[index];
+            if (st) { st.completed++; delete st.active[data.file]; }
+            renderAnimeProgress(index);
+            statusBottom.innerHTML = `<span>${data.file} già presente ⏭</span><span></span>`;
+        }
+        else if (data.type === "anime_error") {
+            const st = animeState[index];
+            if (st) { st.errors++; st.completed++; delete st.active[data.file]; }
+            renderAnimeProgress(index);
+            statusBottom.innerHTML = `<span class="text-error">${data.message || 'Errore episodio'}</span><span></span>`;
         }
         else if (data.type === "manga_chapter_progress") {
             const overallPercent = ((data.current_chapter - 1) / data.total_chapters) * 100;
@@ -537,36 +599,36 @@
                 statusLeft.textContent = `Cap. ${data.chapter} (${data.total_pages} pagine)`;
             }
         }
-        else if (data.type === "anime_done" || data.type === "manga_chapter_done") {
-            statusLeft.textContent = data.file || ("Cap. " + data.chapter + " ✓");
+        else if (data.type === "anime_done") {
+            const st = animeState[index];
+            if (st) { st.completed++; delete st.active[data.file]; }
+            renderAnimeProgress(index);
+        }
+        else if (data.type === "manga_chapter_done") {
+            statusLeft.textContent = "Cap. " + data.chapter + " ✓";
+        }
+        else if (data.type === "manga_skip") {
+            statusBottom.innerHTML = `<span>Cap. ${data.chapter} già presente ⏭</span><span></span>`;
         }
         else if (data.type === "manga_chapter_error") {
             statusLeft.textContent = data.message || "Errore capitolo";
             statusBottom.innerHTML = `<span class="text-error">Continuo con il prossimo...</span><span></span>`;
             // NON rimuovere data-active: il download continua
         }
-        else if (data.type === "anime_series_done" || data.type === "manga_series_done") {
+        else if (data.type === "anime_series_done") {
+            const st = animeState[index];
+            if (st && st.total > 0 && st.errors >= st.total) {
+                showCardError(index, `Nessun episodio scaricato (${st.errors}/${st.total} falliti)`);
+            } else {
+                setCardCompleted(index);
+            }
+            delete animeState[index];
+        }
+        else if (data.type === "manga_series_done") {
             setCardCompleted(index);
         }
         else if (data.type === "anime_stop" || data.type === "error") {
-            statusLeft.textContent = data.message || "Errore / Interrotto";
-            statusLeft.classList.add("text-error");
-
-            const card = document.getElementById(`card_${index}`);
-            card.dataset.state = 'error';
-            card.removeAttribute('data-active');
-
-            const badge = document.getElementById(`badge_${index}`);
-            if (badge) {
-                badge.textContent = 'ERRORE';
-                badge.className = 'badge badge--error';
-            }
-
-            const btn = document.getElementById(`btn_${index}`);
-            btn.textContent = 'RIPROVA';
-            btn.className = 'btn btn--block';
-
-            fill.className = 'progress__fill progress__fill--error';
+            showCardError(index, data.message);
         }
 
         // Salva info capitolo corrente nella card per il calcolo del progresso
