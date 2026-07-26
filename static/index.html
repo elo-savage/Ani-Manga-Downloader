@@ -3,257 +3,417 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Ani-Manga Downloader</title>
-    <!-- Material Symbols -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,100..900;1,100..900&family=Space+Grotesk:wght@300..700&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"/>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <!-- Tailwind Config -->
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "surface-tint": "#5e5e5e",
-                        "outline-variant": "#cfc4c5",
-                        "tertiary-container": "#1b1c1c",
-                        "on-tertiary-fixed": "#1b1c1c",
-                        "on-surface": "#1a1c1c",
-                        "on-secondary-fixed-variant": "#454747",
-                        "surface-container-highest": "#e3e2e2",
-                        "primary": "#000000",
-                        "on-secondary-container": "#616363",
-                        "surface-container-low": "#f4f3f3",
-                        "surface-bright": "#faf9f9",
-                        "error": "#ba1a1a",
-                        "on-tertiary-fixed-variant": "#464747",
-                        "on-tertiary-container": "#848484",
-                        "inverse-on-surface": "#f1f0f0",
-                        "on-error-container": "#93000a",
-                        "outline": "#7e7576",
-                        "on-primary": "#ffffff",
-                        "inverse-primary": "#c6c6c6",
-                        "surface-container-high": "#e9e8e8",
-                        "surface-variant": "#e3e2e2",
-                        "on-secondary-fixed": "#1a1c1c",
-                        "inverse-surface": "#2f3131",
-                        "surface-container-lowest": "#ffffff",
-                        "background": "#faf9f9",
-                        "secondary": "#5d5f5f",
-                        "on-error": "#ffffff",
-                        "secondary-fixed-dim": "#c6c6c7",
-                        "on-primary-fixed-variant": "#474747",
-                        "secondary-container": "#dfe0e0",
-                        "primary-container": "#1b1b1b",
-                        "surface": "#faf9f9",
-                        "on-surface-variant": "#4c4546",
-                        "on-secondary": "#ffffff",
-                        "on-tertiary": "#ffffff",
-                        "surface-container": "#eeeeed",
-                        "on-primary-fixed": "#1b1b1b",
-                        "surface-dim": "#dadada",
-                        "tertiary": "#000000",
-                        "tertiary-fixed-dim": "#c7c6c6",
-                        "secondary-fixed": "#e2e2e2",
-                        "primary-fixed-dim": "#c6c6c6",
-                        "on-background": "#1a1c1c",
-                        "tertiary-fixed": "#e3e2e2",
-                        "error-container": "#ffdad6",
-                        "on-primary-container": "#848484",
-                        "primary-fixed": "#e2e2e2"
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    spacing: {
-                        "margin": "32px",
-                        "xl": "64px",
-                        "sm": "8px",
-                        "xs": "4px",
-                        "md": "16px",
-                        "lg": "32px",
-                        "gutter": "24px",
-                        "unit": "4px"
-                    },
-                    fontFamily: {
-                        "headline-xl": ["Epilogue"],
-                        "data-mono": ["Space Grotesk"],
-                        "headline-lg": ["Epilogue"],
-                        "body-md": ["Work Sans"],
-                        "body-lg": ["Work Sans"]
-                    },
-                    fontSize: {
-                        "headline-xl": ["64px", { lineHeight: "1.0", letterSpacing: "-0.04em", fontWeight: "900" }],
-                        "data-mono": ["14px", { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600" }],
-                        "headline-lg": ["40px", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "800" }],
-                        "body-md": ["16px", { lineHeight: "1.5", letterSpacing: "0", fontWeight: "400" }],
-                        "body-lg": ["18px", { lineHeight: "1.5", letterSpacing: "0", fontWeight: "500" }]
-                    }
-                }
-            }
-        }
-    </script>
+    <title>AniManga Downloader</title>
     <style>
-        /* Custom Manga Patterns & Neobrutalist Utilities */
-        .screentone-bg {
-            background-color: #faf9f9;
-            background-image: radial-gradient(#c6c6c6 1px, transparent 1px);
-            background-size: 8px 8px;
-        }
-        .screentone-dense {
-            background-color: #ffffff;
-            background-image: radial-gradient(#000000 1.5px, transparent 1.5px);
-            background-size: 6px 6px;
-        }
-        .stripe-pattern {
-            background-image: repeating-linear-gradient(
-                -45deg,
-                #000000,
-                #000000 4px,
-                #ffffff 4px,
-                #ffffff 8px
-            );
-        }
-        .speedlines {
-            background-image: repeating-linear-gradient(
-                0deg,
-                #ffffff,
-                #ffffff 10px,
-                #000000 11px,
-                #ffffff 12px
-            );
-        }
-        .btn-neobrutal {
-            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
-            transition: all 0.1s steps(2);
-        }
-        .btn-neobrutal:hover {
-            transform: translate(4px, 4px);
-            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
-        }
-        .btn-neobrutal:active {
-            transform: translate(8px, 8px);
-            box-shadow: 0px 0px 0px 0px rgba(0,0,0,1);
-            filter: invert(1);
-        }
+    /* ============================================================
+       FONT LOCALI (offline) — Epilogue, Space Grotesk, Work Sans
+       ============================================================ */
+    @font-face { font-family: 'Epilogue'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/Epilogue-700-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Epilogue'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/Epilogue-700-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Epilogue'; font-style: normal; font-weight: 800; font-display: swap; src: url('fonts/Epilogue-800-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Epilogue'; font-style: normal; font-weight: 800; font-display: swap; src: url('fonts/Epilogue-800-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Epilogue'; font-style: normal; font-weight: 900; font-display: swap; src: url('fonts/Epilogue-900-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Epilogue'; font-style: normal; font-weight: 900; font-display: swap; src: url('fonts/Epilogue-900-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/SpaceGrotesk-500-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/SpaceGrotesk-500-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/SpaceGrotesk-600-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/SpaceGrotesk-600-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/SpaceGrotesk-700-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/SpaceGrotesk-700-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/WorkSans-400-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/WorkSans-400-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/WorkSans-500-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/WorkSans-500-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/WorkSans-600-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/WorkSans-600-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+    @font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/WorkSans-700-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+    @font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/WorkSans-700-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+    /* ============================================================
+       TOKEN DI DESIGN (Neo-Brutalist)
+       ============================================================ */
+    :root {
+        --bg: #faf9f9;
+        --white: #ffffff;
+        --surface-low: #f4f3f3;
+        --surface: #eeeeed;
+        --surface-variant: #e3e2e2;
+        --ink: #000000;
+        --on-ink: #ffffff;
+        --text: #1a1c1c;
+        --outline: #7e7576;
+        --outline-variant: #cfc4c5;
+        --error: #ba1a1a;
+
+        --xs: 4px;  --sm: 8px;  --md: 16px;
+        --gutter: 24px;  --lg: 32px;  --xl: 64px;
+
+        --font-display: 'Epilogue', system-ui, -apple-system, sans-serif;
+        --font-mono: 'Space Grotesk', ui-monospace, 'Courier New', monospace;
+        --font-body: 'Work Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    /* ============================================================
+       RESET
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+    }
+    ::selection { background: var(--ink); color: var(--on-ink); }
+    button { font: inherit; }
+    input, textarea { font: inherit; }
+    svg { display: inline-block; vertical-align: middle; }
+
+    /* ============================================================
+       TIPOGRAFIA
+       ============================================================ */
+    .display-xl {
+        font-family: var(--font-display); font-weight: 900;
+        font-size: clamp(40px, 8vw, 64px); line-height: 1;
+        letter-spacing: -0.04em; text-transform: uppercase; margin: 0;
+    }
+    .display-lg {
+        font-family: var(--font-display); font-weight: 800;
+        font-size: clamp(28px, 5vw, 40px); line-height: 1.1;
+        letter-spacing: -0.02em; text-transform: uppercase; margin: 0;
+    }
+    .mono {
+        font-family: var(--font-mono); font-weight: 600;
+        font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+
+    /* ============================================================
+       PATTERN
+       ============================================================ */
+    .screentone-page {
+        background-color: var(--bg);
+        background-image: radial-gradient(#c6c6c6 1px, transparent 1px);
+        background-size: 8px 8px;
+    }
+    .screentone-dense {
+        background-color: #ffffff;
+        background-image: radial-gradient(#000000 1.5px, transparent 1.5px);
+        background-size: 6px 6px;
+    }
+    .stripe-pattern {
+        background-image: repeating-linear-gradient(-45deg, #000 0, #000 4px, #fff 4px, #fff 8px);
+    }
+    .speedlines {
+        background-color: #ffffff;
+        background-image: repeating-linear-gradient(0deg, #fff 0, #fff 10px, #000 11px, #fff 12px);
+    }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .app {
+        min-height: 100vh;
+        padding: var(--md);
+        display: flex; flex-direction: column; gap: var(--gutter);
+    }
+    @media (min-width: 768px) { .app { padding: var(--xl); } }
+
+    .box {
+        background: var(--white);
+        border: 4px solid var(--ink);
+        box-shadow: 8px 8px 0 0 var(--ink);
+    }
+
+    .header { align-self: flex-start; padding: var(--md); }
+
+    /* ---- Pannello di comando ---- */
+    .panel { padding: var(--gutter); display: flex; flex-direction: column; gap: var(--md); }
+    .panel__head {
+        display: flex; align-items: center; justify-content: space-between;
+        border-bottom: 4px solid var(--ink);
+        padding-bottom: var(--sm); margin-bottom: var(--sm);
+    }
+    .panel__head svg { width: 36px; height: 36px; }
+    .field { display: flex; flex-direction: column; gap: var(--sm); }
+
+    .url-input {
+        width: 100%; min-height: 92px;
+        background: var(--surface-low);
+        border: 4px solid var(--ink);
+        padding: var(--md);
+        font-family: var(--font-mono); font-size: 14px; letter-spacing: 0.05em;
+        color: var(--text); resize: vertical; outline: none;
+    }
+    .url-input:focus { border-width: 6px; padding: 14px; }
+    .url-input::placeholder { color: var(--outline); }
+
+    /* ============================================================
+       BOTTONI
+       ============================================================ */
+    .btn {
+        font-family: var(--font-display); font-weight: 800;
+        font-size: 18px; text-transform: uppercase; letter-spacing: 0.05em;
+        border: 4px solid var(--ink);
+        padding: var(--sm) 2rem;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        cursor: pointer;
+        background: var(--ink); color: var(--on-ink);
+        box-shadow: 8px 8px 0 0 var(--ink);
+        transition: transform 0.1s steps(2), box-shadow 0.1s steps(2);
+    }
+    .btn svg { width: 22px; height: 22px; }
+    .btn:hover { transform: translate(4px, 4px); box-shadow: 4px 4px 0 0 var(--ink); }
+    .btn:active { transform: translate(8px, 8px); box-shadow: 0 0 0 0 var(--ink); filter: invert(1); }
+    .btn--ghost { background: var(--white); color: var(--ink); }
+    .btn--block { width: 100%; margin-top: var(--sm); }
+    .btn--fetch { width: 100%; margin-top: var(--sm); }
+    @media (min-width: 768px) { .btn--fetch { width: auto; align-self: flex-start; } }
+    .btn--done {
+        background: var(--surface-variant); color: var(--text);
+        box-shadow: none; opacity: 0.8; cursor: not-allowed;
+    }
+    .btn--done:hover, .btn--done:active { transform: none; box-shadow: none; filter: none; }
+    .btn:disabled { cursor: not-allowed; }
+
+    /* ============================================================
+       SEZIONE RISULTATI
+       ============================================================ */
+    .results { display: flex; flex-direction: column; gap: var(--md); margin-top: var(--lg); }
+    .section-title {
+        background: var(--white); border: 4px solid var(--ink);
+        padding: var(--sm) var(--md); align-self: flex-start;
+        transform: rotate(-2deg);
+    }
+    .cards { display: grid; grid-template-columns: 1fr; gap: var(--gutter); }
+    @media (min-width: 768px)  { .cards { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1280px) { .cards { grid-template-columns: repeat(3, 1fr); } }
+    .empty {
+        grid-column: 1 / -1;
+        font-family: var(--font-mono); font-size: 14px; letter-spacing: 0.05em;
+        text-transform: uppercase; color: var(--outline-variant); font-style: italic;
+    }
+
+    /* ============================================================
+       CARD
+       ============================================================ */
+    .card {
+        position: relative; z-index: 1;
+        background: var(--white);
+        border: 4px solid var(--ink);
+        box-shadow: 12px 12px 0 0 var(--ink);
+        padding: var(--sm);
+        display: flex; flex-direction: column; gap: var(--sm);
+    }
+
+    .badge {
+        position: absolute; top: 0; right: 0; z-index: 6;
+        padding: var(--xs) var(--sm);
+        font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase;
+        background: var(--surface-variant); color: var(--text);
+        border-left: 4px solid var(--ink); border-bottom: 4px solid var(--ink);
+    }
+    .badge--active { background: var(--ink); color: var(--on-ink); }
+    .badge--error  { background: var(--error); color: #fff; }
+
+    .card__body {
+        position: relative; z-index: 1;
+        background: var(--white); border: 4px solid var(--ink);
+        box-shadow: 4px 4px 0 0 var(--ink);
+        padding: var(--sm); margin-top: var(--md);
+    }
+    .card__titlerow { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .card__title {
+        font-family: var(--font-display); font-weight: 900; font-size: 22px;
+        text-transform: uppercase; margin: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .tag {
+        font-size: 12px; font-weight: 700; white-space: nowrap;
+        border: 2px solid var(--ink); padding: 0 4px;
+        background: var(--ink); color: #fff;
+    }
+    .card__count { font-family: var(--font-mono); font-size: 14px; letter-spacing: 0.05em; margin: 8px 0; }
+
+    .range { display: flex; align-items: center; gap: var(--sm); margin-top: var(--sm); flex-wrap: wrap; }
+    .range label { font-family: var(--font-mono); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .range input {
+        width: 64px; text-align: center;
+        background: #fff; border: 4px solid var(--ink); padding: 4px;
+        font-family: var(--font-mono); font-size: 14px;
+        box-shadow: 2px 2px 0 0 var(--ink); outline: none;
+    }
+    .range input:focus { transform: translate(2px, 2px); box-shadow: none; }
+    .range input:disabled { opacity: 0.5; }
+
+    /* ---- Progressi ---- */
+    .progressbox {
+        margin-top: auto;
+        background: #fff; border: 4px solid var(--ink);
+        box-shadow: 4px 4px 0 0 var(--ink);
+        padding: var(--sm);
+        display: flex; flex-direction: column; gap: var(--xs);
+    }
+    .progressbox__row { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; }
+    .progressbox__row .left {
+        font-weight: 700; padding-right: 8px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .progressbox__row svg { width: 16px; height: 16px; }
+    .progress {
+        width: 100%; height: 32px; position: relative; overflow: hidden;
+        border: 4px solid var(--ink); background: var(--surface);
+    }
+    .progress__fill {
+        position: absolute; top: 0; left: 0; height: 100%; width: 0;
+        background: var(--ink); border-right: 4px solid var(--ink);
+        transition: width 0.3s;
+    }
+    .progress__fill.stripe-pattern { background-color: transparent; }
+    .progress__fill--error { background: var(--error); }
+    .progressbox__foot {
+        display: flex; justify-content: space-between;
+        font-family: var(--font-mono); font-size: 10px; color: var(--outline); margin-top: 4px;
+    }
+
+    .banner {
+        position: absolute; top: -16px; left: -16px; z-index: 20;
+        background: var(--ink); color: var(--on-ink);
+        border: 4px solid var(--ink);
+        padding: var(--xs) var(--md);
+        transform: rotate(-6deg);
+        box-shadow: 4px 4px 0 0 var(--ink);
+        font-family: var(--font-display); font-weight: 900; font-size: 20px; text-transform: uppercase;
+    }
+
+    .text-error { color: var(--error); }
+    .spin { display: inline-flex; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary">
-<main class="min-w-full min-h-screen screentone-bg p-4 md:p-xl flex flex-col gap-gutter">
-    
+<body>
+<main class="app screentone-page">
+
     <!-- Header -->
-    <header class="bg-surface-container-lowest border-4 border-primary p-md shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-fit">
-        <h1 class="font-headline-xl text-4xl md:text-[64px] uppercase">Animanga Downloader</h1>
+    <header class="box header">
+        <h1 class="display-xl">AniManga Downloader</h1>
     </header>
 
-    <!-- ZONA DI INPUT -->
-    <section class="bg-surface-container-lowest border-4 border-primary p-gutter shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative z-10 flex flex-col gap-md w-full">
-        <div class="flex items-center justify-between border-b-4 border-primary pb-sm mb-sm">
-            <h2 class="font-headline-lg text-2xl md:text-[40px] uppercase">Pannello di Comando</h2>
-            <span class="material-symbols-outlined text-4xl">terminal</span>
+    <!-- Pannello di input -->
+    <section class="box panel">
+        <div class="panel__head">
+            <h2 class="display-lg">Pannello di Comando</h2>
+            <!-- icon: terminal -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
         </div>
-        <div class="flex flex-col gap-sm">
-            <label class="font-data-mono text-data-mono uppercase">URL Sorgente (Multi-Line)</label>
-            <textarea id="urlInput" class="w-full bg-surface-container-low border-4 border-primary p-md font-data-mono text-data-mono focus:border-8 focus:p-[12px] outline-none resize-none" placeholder="Inserisci i link di AnimeSaturn o MangaWorld qui... (es. https://source.com/manga/chapter-1)" rows="3"></textarea>
-            
-            <button id="fetchBtn" class="btn-neobrutal mt-sm w-full md:w-auto self-start bg-primary text-on-primary border-4 border-primary px-8 py-sm font-headline-lg text-lg uppercase tracking-wider flex items-center justify-center gap-2">
-                ANALIZZA LINK <span class="material-symbols-outlined">bolt</span>
+        <div class="field">
+            <label class="mono" for="urlInput">URL Sorgente (Multi-Line)</label>
+            <textarea id="urlInput" class="url-input" rows="3" placeholder="Inserisci i link di AnimeSaturn o MangaWorld qui... (uno per riga o separati da spazi)"></textarea>
+            <button id="fetchBtn" class="btn btn--fetch" type="button">
+                ANALIZZA LINK
+                <!-- icon: bolt -->
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
             </button>
         </div>
     </section>
 
-    <!-- ZONA DEI PROGRESSI -->
-    <section class="flex flex-col gap-md mt-lg w-full">
-        <h2 class="font-headline-lg text-2xl md:text-[40px] uppercase bg-white border-4 border-primary px-md py-sm w-fit inline-block transform -rotate-2">Le Tavole d'Azione</h2>
-        <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter w-full">
-            <!-- Dynamic cards will go here -->
-            <div id="emptyState" class="col-span-full font-data-mono text-data-mono text-outline-variant italic">Nessun download in coda. Incolla i link e premi ANALIZZA LINK.</div>
+    <!-- Sezione progressi -->
+    <section class="results">
+        <h2 class="display-lg section-title">Le Tavole d'Azione</h2>
+        <div id="cardsContainer" class="cards">
+            <div id="emptyState" class="empty">Nessun download in coda. Incolla i link e premi ANALIZZA LINK.</div>
         </div>
     </section>
 
 </main>
 
 <script>
+    "use strict";
+
+    // --- Icone SVG inline (nessuna dipendenza esterna) ---
+    const ICON = {
+        bolt:  '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>',
+        sync:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>',
+        check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg>'
+    };
+
     let currentData = null;
 
-    document.getElementById('fetchBtn').addEventListener('click', async () => {
-        const urlInput = document.getElementById('urlInput').value;
-        if(!urlInput.trim()) return;
+    const fetchBtn = document.getElementById('fetchBtn');
+    const urlInput = document.getElementById('urlInput');
+    const container = document.getElementById('cardsContainer');
 
-        const btn = document.getElementById('fetchBtn');
-        btn.innerHTML = 'ANALISI IN CORSO... <span class="material-symbols-outlined animate-spin">sync</span>';
-        btn.classList.add('opacity-80', 'pointer-events-none');
-        
+    fetchBtn.addEventListener('click', async () => {
+        if (!urlInput.value.trim()) return;
+
+        fetchBtn.disabled = true;
+        fetchBtn.innerHTML = 'ANALISI IN CORSO... <span class="spin">' + ICON.sync + '</span>';
+
         try {
-            const data = await pywebview.api.fetch_info(urlInput);
+            const data = await pywebview.api.fetch_info(urlInput.value);
             currentData = data;
             renderCards(data);
         } catch (e) {
-            console.error("Error fetching info", e);
+            console.error("Errore durante l'analisi", e);
         } finally {
-            btn.innerHTML = 'ANALIZZA LINK <span class="material-symbols-outlined">bolt</span>';
-            btn.classList.remove('opacity-80', 'pointer-events-none');
+            fetchBtn.disabled = false;
+            fetchBtn.innerHTML = 'ANALIZZA LINK ' + ICON.bolt;
         }
     });
 
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+    }
+
     function renderCards(items) {
-        const container = document.getElementById('cardsContainer');
         container.innerHTML = '';
-        if(!items || items.length === 0) {
-            container.innerHTML = '<div id="emptyState" class="col-span-full font-data-mono text-data-mono text-outline-variant italic">Nessun elemento trovato. Verifica i link.</div>';
+        if (!items || items.length === 0) {
+            container.innerHTML = '<div id="emptyState" class="empty">Nessun elemento trovato. Verifica i link.</div>';
             return;
         }
 
         items.forEach((item, index) => {
             const isAnime = item.kind === 'anime';
+            const kindLabel = isAnime ? 'ANIME' : 'MANGA';
+            const unit = isAnime ? 'episodi' : 'capitoli';
+            const title = escapeHtml(item.title);
+            const count = item.count;
+
             const html = `
-                <article id="card_${index}" class="bg-surface-container-lowest border-4 border-primary p-sm shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-sm z-10 relative screentone-dense transition-all">
-                    <div id="badge_${index}" class="absolute top-0 right-0 bg-surface-variant text-on-surface px-sm py-xs font-data-mono text-data-mono uppercase border-l-4 border-b-4 border-primary">
-                        IN ATTESA
-                    </div>
-                    
-                    <div class="bg-white border-4 border-primary p-sm mt-md relative z-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-headline-lg text-2xl font-black uppercase truncate pr-2" title="${item.title}">${item.title}</h3>
-                            <span class="text-xs border-2 border-black px-1 font-bold bg-black text-white">${isAnime ? 'ANIME' : 'MANGA'}</span>
+                <article id="card_${index}" class="card screentone-dense" data-state="idle">
+                    <div id="badge_${index}" class="badge">IN ATTESA</div>
+
+                    <div class="card__body">
+                        <div class="card__titlerow">
+                            <h3 class="card__title" title="${title}">${title}</h3>
+                            <span class="tag">${kindLabel}</span>
                         </div>
-                        <p class="font-data-mono text-data-mono mb-2">Trovati ${item.count} ${isAnime ? 'episodi' : 'capitoli'}</p>
-                        
-                        <div class="flex items-center gap-sm mt-sm">
-                            <label class="font-data-mono text-data-mono font-bold uppercase text-xs">Da:</label>
-                            <input id="start_${index}" class="w-16 bg-white border-4 border-primary p-1 font-data-mono text-data-mono text-center outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" type="number" min="1" max="${item.count}" value="1"/>
-                            
-                            <label class="font-data-mono text-data-mono font-bold uppercase ml-2 text-xs">A:</label>
-                            <input id="end_${index}" class="w-16 bg-white border-4 border-primary p-1 font-data-mono text-data-mono text-center outline-none focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" type="number" min="1" max="${item.count}" value="${item.count}"/>
+                        <p class="card__count">Trovati ${count} ${unit}</p>
+                        <div class="range">
+                            <label for="start_${index}">Da:</label>
+                            <input id="start_${index}" type="number" min="1" max="${count}" value="1"/>
+                            <label for="end_${index}">A:</label>
+                            <input id="end_${index}" type="number" min="1" max="${count}" value="${count}"/>
                         </div>
                     </div>
 
-                    <div class="mt-auto pt-md flex flex-col gap-xs bg-white p-sm border-4 border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        <div class="flex justify-between font-data-mono text-data-mono text-xs mb-1">
-                            <span id="status_left_${index}" class="truncate pr-2 font-bold">Pronto</span>
+                    <div class="progressbox">
+                        <div class="progressbox__row">
+                            <span id="status_left_${index}" class="left">Pronto</span>
                             <span id="status_right_${index}">0%</span>
                         </div>
-                        
-                        <!-- Progress Bar -->
-                        <div class="w-full h-8 border-4 border-primary bg-surface-container relative overflow-hidden">
-                            <div id="progress_${index}" class="absolute top-0 left-0 h-full w-0 bg-primary border-r-4 border-primary transition-all duration-300"></div>
+                        <div class="progress">
+                            <div id="progress_${index}" class="progress__fill"></div>
                         </div>
-                        
-                        <div id="status_bottom_${index}" class="flex justify-between font-data-mono text-data-mono text-[10px] mt-1 text-outline">
-                            <span>-</span>
-                            <span>-</span>
+                        <div id="status_bottom_${index}" class="progressbox__foot">
+                            <span>-</span><span>-</span>
                         </div>
                     </div>
 
-                    <button id="btn_${index}" class="btn-neobrutal mt-sm w-full bg-primary text-on-primary border-4 border-primary py-sm font-headline-lg text-lg uppercase tracking-wider active:translate-x-1 active:translate-y-1 active:shadow-none transition-all" onclick="toggleDownload(${index})">
+                    <button id="btn_${index}" class="btn btn--block" type="button" onclick="toggleDownload(${index})">
                         AVVIA DOWNLOAD
                     </button>
                 </article>
@@ -263,132 +423,156 @@
     }
 
     async function toggleDownload(index) {
-        const btn = document.getElementById(`btn_${index}`);
+        const card  = document.getElementById(`card_${index}`);
+        const btn   = document.getElementById(`btn_${index}`);
         const badge = document.getElementById(`badge_${index}`);
-        const card = document.getElementById(`card_${index}`);
-        const progress = document.getElementById(`progress_${index}`);
-        
-        if (btn.innerText.includes('AVVIA') || btn.innerText.includes('RIPROVA')) {
-            // Check if another download is running (since backend allows 1 at a time per API instance, 
-            // actually app.py limits to one thread right now if we look at start_download).
-            // Let's just start it.
-            btn.innerText = 'ANNULLA';
-            btn.className = "btn-neobrutal mt-sm w-full bg-white text-primary border-4 border-primary py-sm font-headline-lg text-lg uppercase tracking-wider active:translate-x-1 active:translate-y-1 active:shadow-none transition-all";
-            
-            badge.innerText = 'SCARICAMENTO';
-            badge.className = "absolute top-0 right-0 bg-primary text-on-primary px-sm py-xs font-data-mono text-data-mono uppercase border-l-4 border-b-4 border-primary";
-            
-            card.classList.remove('screentone-dense');
-            
-            progress.className = "absolute top-0 left-0 h-full w-0 stripe-pattern border-r-4 border-primary transition-all duration-300";
-            
-            const start = parseInt(document.getElementById(`start_${index}`).value) || 1;
-            const end = parseInt(document.getElementById(`end_${index}`).value) || 1;
-            const item = currentData[index];
-            
-            // Mark as active card
-            card.setAttribute('data-active', 'true');
-            
-            await pywebview.api.start_download(item, start, end);
-        } else {
-            // Stop Download
+        const fill  = document.getElementById(`progress_${index}`);
+        const state = card.dataset.state;
+
+        if (state === 'downloading') {
+            // --- Ferma il download ---
             await pywebview.api.stop_download();
-            
-            btn.innerText = 'AVVIA DOWNLOAD';
-            btn.className = "btn-neobrutal mt-sm w-full bg-primary text-on-primary border-4 border-primary py-sm font-headline-lg text-lg uppercase tracking-wider active:translate-x-1 active:translate-y-1 active:shadow-none transition-all";
-            
-            badge.innerText = 'INTERROTTO';
-            badge.className = "absolute top-0 right-0 bg-error text-on-primary px-sm py-xs font-data-mono text-data-mono uppercase border-l-4 border-b-4 border-primary";
-            
-            card.classList.add('screentone-dense');
-            progress.className = "absolute top-0 left-0 h-full bg-primary border-r-4 border-primary transition-all duration-300";
+
+            card.dataset.state = 'idle';
             card.removeAttribute('data-active');
+            card.classList.add('screentone-dense');
+
+            btn.textContent = 'AVVIA DOWNLOAD';
+            btn.className = 'btn btn--block';
+
+            badge.textContent = 'INTERROTTO';
+            badge.className = 'badge badge--error';
+
+            fill.className = 'progress__fill';
+            return;
         }
+
+        // --- Avvia (o riprova) il download ---
+        const start = parseInt(document.getElementById(`start_${index}`).value, 10) || 1;
+        const end   = parseInt(document.getElementById(`end_${index}`).value, 10) || 1;
+
+        card.dataset.state = 'downloading';
+        card.setAttribute('data-active', 'true');
+        card.classList.remove('screentone-dense');
+
+        btn.textContent = 'ANNULLA';
+        btn.className = 'btn btn--block btn--ghost';
+
+        badge.textContent = 'SCARICAMENTO';
+        badge.className = 'badge badge--active';
+
+        fill.className = 'progress__fill stripe-pattern';
+
+        await pywebview.api.start_download(currentData[index], start, end);
     }
 
     function setCardCompleted(index) {
         const card = document.getElementById(`card_${index}`);
-        card.className = "bg-white border-4 border-primary p-sm shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-sm z-10 relative speedlines text-primary transition-all";
+        card.dataset.state = 'done';
         card.removeAttribute('data-active');
-        
+        card.classList.remove('screentone-dense');
+        card.classList.add('speedlines');
+
         const badge = document.getElementById(`badge_${index}`);
-        if(badge) badge.remove();
-        
-        // Add completion banner
-        const completedBanner = `
-            <div class="absolute -top-4 -left-4 bg-primary text-on-primary border-4 border-primary px-md py-xs transform -rotate-6 z-20 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <span class="font-headline-lg text-xl font-black uppercase">COMPLETATO!</span>
-            </div>
-        `;
-        card.insertAdjacentHTML('afterbegin', completedBanner);
-        
-        const progress = document.getElementById(`progress_${index}`);
-        if(progress) {
-            progress.style.width = '100%';
-            progress.className = "absolute top-0 left-0 h-full w-full bg-primary border-r-4 border-primary";
+        if (badge) badge.remove();
+
+        if (!card.querySelector('.banner')) {
+            const banner = document.createElement('div');
+            banner.className = 'banner';
+            banner.textContent = 'COMPLETATO!';
+            card.insertAdjacentElement('afterbegin', banner);
         }
-        
-        document.getElementById(`status_left_${index}`).innerText = "Download Terminato";
-        document.getElementById(`status_right_${index}`).innerHTML = `<span class="material-symbols-outlined align-middle">check_circle</span>`;
-        document.getElementById(`status_bottom_${index}`).innerHTML = `<span></span><span></span>`;
-        
+
+        const fill = document.getElementById(`progress_${index}`);
+        if (fill) { fill.style.width = '100%'; fill.className = 'progress__fill'; }
+
+        document.getElementById(`status_left_${index}`).textContent = 'Download Terminato';
+        document.getElementById(`status_right_${index}`).innerHTML = ICON.check;
+        document.getElementById(`status_bottom_${index}`).innerHTML = '<span></span><span></span>';
+
         const btn = document.getElementById(`btn_${index}`);
-        btn.innerText = 'FATTO';
+        btn.textContent = 'FATTO';
         btn.disabled = true;
-        btn.className = "mt-sm w-full bg-surface-variant text-on-surface border-4 border-primary py-sm font-headline-lg text-lg uppercase tracking-wider opacity-80 cursor-not-allowed";
-        
-        // Disabilita gli input
+        btn.className = 'btn btn--block btn--done';
+
         document.getElementById(`start_${index}`).disabled = true;
         document.getElementById(`end_${index}`).disabled = true;
     }
 
-    window.updateProgress = function(data) {
-        // Find active card
+    window.updateProgress = function (data) {
         const activeCard = document.querySelector('article[data-active="true"]');
-        if(!activeCard) return;
-        
+        if (!activeCard) return;
+
         const index = activeCard.id.split('_')[1];
-        const progressEl = document.getElementById(`progress_${index}`);
-        const statusLeft = document.getElementById(`status_left_${index}`);
+        const fill        = document.getElementById(`progress_${index}`);
+        const statusLeft  = document.getElementById(`status_left_${index}`);
         const statusRight = document.getElementById(`status_right_${index}`);
         const statusBottom = document.getElementById(`status_bottom_${index}`);
 
         if (data.type === "anime_progress") {
-            progressEl.style.width = data.percent + '%';
-            statusLeft.innerText = data.file;
-            statusRight.innerText = data.percent.toFixed(1) + '%';
+            fill.style.width = data.percent + '%';
+            statusLeft.textContent = data.file;
+            statusRight.textContent = data.percent.toFixed(1) + '%';
             statusBottom.innerHTML = `<span>V: ${data.speed}</span><span>ETA: ${data.eta}</span>`;
-        } 
-        else if (data.type === "anime_done" || data.type === "manga_chapter_done") {
-            // Partial done (episode or chapter)
-            statusLeft.innerText = data.file || ("Cap. " + data.chapter);
-            statusRight.innerText = "Completato";
-        } 
+        }
+        else if (data.type === "manga_chapter_progress") {
+            const overallPercent = ((data.current_chapter - 1) / data.total_chapters) * 100;
+            fill.style.width = overallPercent + '%';
+            statusLeft.textContent = data.message;
+            statusRight.textContent = `Cap ${data.current_chapter}/${data.total_chapters}`;
+            statusBottom.innerHTML = `<span>Scaricamento in corso...</span><span></span>`;
+        }
         else if (data.type === "manga_page_done") {
-            const percent = (data.page / data.total_pages) * 100;
-            progressEl.style.width = percent + '%';
-            statusLeft.innerText = `Cap. ${data.chapter}`;
-            statusRight.innerText = `Pag ${data.page} / ${data.total_pages}`;
-        } 
+            const chapData = activeCard.getAttribute('data-current-chapter') || '1';
+            const totalChaps = activeCard.getAttribute('data-total-chapters') || '1';
+            const chapterBase = (parseInt(chapData, 10) - 1) / parseInt(totalChaps, 10);
+            const pageContrib = (data.page / data.total_pages) / parseInt(totalChaps, 10);
+            const overallPercent = (chapterBase + pageContrib) * 100;
+            fill.style.width = Math.min(overallPercent, 99) + '%';
+            statusLeft.textContent = `Cap. ${data.chapter} - Pag ${data.page}/${data.total_pages}`;
+            statusRight.textContent = `Cap ${chapData}/${totalChaps}`;
+        }
+        else if (data.type === "manga_chapter_start") {
+            if (data.chapter) {
+                statusLeft.textContent = `Cap. ${data.chapter} (${data.total_pages} pagine)`;
+            }
+        }
+        else if (data.type === "anime_done" || data.type === "manga_chapter_done") {
+            statusLeft.textContent = data.file || ("Cap. " + data.chapter + " ✓");
+        }
+        else if (data.type === "manga_chapter_error") {
+            statusLeft.textContent = data.message || "Errore capitolo";
+            statusBottom.innerHTML = `<span class="text-error">Continuo con il prossimo...</span><span></span>`;
+            // NON rimuovere data-active: il download continua
+        }
         else if (data.type === "anime_series_done" || data.type === "manga_series_done") {
             setCardCompleted(index);
-        } 
+        }
         else if (data.type === "anime_stop" || data.type === "error") {
-            statusLeft.innerText = data.message || "Errore / Interrotto";
+            statusLeft.textContent = data.message || "Errore / Interrotto";
             statusLeft.classList.add("text-error");
-            activeCard.removeAttribute('data-active');
-            
+
+            const card = document.getElementById(`card_${index}`);
+            card.dataset.state = 'error';
+            card.removeAttribute('data-active');
+
             const badge = document.getElementById(`badge_${index}`);
-            if(badge) {
-                badge.innerText = 'ERRORE';
-                badge.className = "absolute top-0 right-0 bg-error text-on-primary px-sm py-xs font-data-mono text-data-mono uppercase border-l-4 border-b-4 border-primary";
+            if (badge) {
+                badge.textContent = 'ERRORE';
+                badge.className = 'badge badge--error';
             }
-            
+
             const btn = document.getElementById(`btn_${index}`);
-            btn.innerText = 'RIPROVA';
-            btn.className = "btn-neobrutal mt-sm w-full bg-primary text-on-primary border-4 border-primary py-sm font-headline-lg text-lg uppercase tracking-wider active:translate-x-1 active:translate-y-1 active:shadow-none transition-all";
-            
-            progressEl.className = "absolute top-0 left-0 h-full bg-error border-r-4 border-primary transition-all duration-300";
+            btn.textContent = 'RIPROVA';
+            btn.className = 'btn btn--block';
+
+            fill.className = 'progress__fill progress__fill--error';
+        }
+
+        // Salva info capitolo corrente nella card per il calcolo del progresso
+        if (data.current_chapter !== undefined) {
+            activeCard.setAttribute('data-current-chapter', data.current_chapter);
+            activeCard.setAttribute('data-total-chapters', data.total_chapters);
         }
     };
 </script>
