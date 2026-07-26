@@ -8,11 +8,11 @@ Accetta link misti AnimeSaturn e MangaWorld, chiede intervalli e scarica tutto.
 import os
 import re
 import io
+import sys
 import base64
 import logging
 import tempfile
 import shutil
-import subprocess
 import threading
 from pathlib import Path
 from urllib.parse import urlparse, urljoin
@@ -24,16 +24,58 @@ from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 from PIL import Image
 
+try:
+    import yt_dlp
+except ImportError:  # senza yt-dlp il download anime non è disponibile (il manga sì)
+    yt_dlp = None
+
 
 # ============================================================
 # CONFIGURAZIONE
 # ============================================================
 
 ANIME_MAX_THREADS = 4
+ANIME_FRAGMENTS = 4  # frammenti HLS scaricati in parallelo per ogni episodio
 MANGA_MAX_THREADS = 8
 HTTP_TIMEOUT = 20
 HTTP_RETRIES = 3
 USER_AGENT = "Mozilla/5.0"
+
+
+def _find_binary(name: str) -> str | None:
+    """Trova un binario esterno: prima quello incluso nel bundle (PyInstaller
+    `sys._MEIPASS`), poi accanto all'eseguibile, infine nel PATH di sistema.
+    Così funziona sia in sviluppo sia dentro l'app .dmg/.exe impacchettata."""
+    candidates = [name, name + ".exe"]
+    search_dirs = []
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        search_dirs.append(meipass)
+    if getattr(sys, "frozen", False):
+        search_dirs.append(os.path.dirname(sys.executable))
+    for d in search_dirs:
+        for c in candidates:
+            p = os.path.join(d, c)
+            if os.path.isfile(p):
+                return p
+    return shutil.which(name)
+
+
+# ffmpeg serve a yt-dlp per assemblare (mux) gli stream HLS in un file mp4.
+FFMPEG_PATH = _find_binary("ffmpeg")
+
+
+def anime_check_dependencies() -> tuple[bool, list[str]]:
+    """Verifica le dipendenze runtime del download anime.
+
+    yt-dlp è una libreria Python (inclusa nel bundle), ffmpeg è un binario
+    esterno necessario per gli stream HLS. Restituisce (ok, lista_mancanti)."""
+    missing = []
+    if yt_dlp is None:
+        missing.append("yt-dlp")
+    if not _find_binary("ffmpeg"):
+        missing.append("ffmpeg")
+    return (not missing, missing)
 
 
 def _make_session() -> requests.Session:
@@ -72,6 +114,19 @@ def parse_intervallo(total: int) -> list[int]:
 
 # Session condivisa per le richieste anime (con retry)
 _anime_session = _make_session()
+
+
+def _anime_folder_name(url: str) -> str:
+    """Nome cartella/titolo leggibile dall'URL dell'anime, senza l'ID casuale
+    finale di AnimeSaturn (es. "one-piece-PmTvj" -> "One Piece")."""
+    m = re.search(r"/anime/([^/]+)", url)
+    slug = m.group(1) if m else "Anime"
+    parts = slug.split("-")
+    # Rimuove un eventuale ID finale: segmento corto con maiuscole/cifre miste,
+    # che non è una vera parola del titolo (es. "PmTvj", "CYk2T").
+    if len(parts) > 1 and re.fullmatch(r"[A-Za-z0-9]{4,8}", parts[-1]) and re.search(r"[A-Z0-9]", parts[-1]):
+        parts = parts[:-1]
+    return " ".join(p.capitalize() for p in parts) if parts else slug
 
 
 def anime_estrai_episodi(url_anime: str) -> list[str]:
@@ -195,73 +250,142 @@ def _anime_resolve_stream(watch_url: str) -> tuple[str, str] | None:
     return stream, embed_url
 
 
+class _AnimeStopped(Exception):
+    """Sollevata dentro il progress hook di yt-dlp per interrompere il download."""
+
+
+def _fmt_speed(bps) -> str:
+    """Formatta una velocità in byte/s (es. 1572864 -> '1.50MiB/s')."""
+    if not bps:
+        return "?"
+    for unit in ("B", "KiB", "MiB", "GiB"):
+        if bps < 1024:
+            return f"{bps:.2f}{unit}/s"
+        bps /= 1024
+    return f"{bps:.2f}TiB/s"
+
+
+def _fmt_eta(seconds) -> str:
+    """Formatta un ETA in secondi (es. 40 -> '00:40', 3700 -> '01:01:40')."""
+    if seconds is None:
+        return "?"
+    seconds = int(seconds)
+    h, rem = divmod(seconds, 3600)
+    m, s = divmod(rem, 60)
+    return f"{h:02d}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
+
+
 def _anime_download_video(ep_url: str, filepath: str, progress_cb=None, stop_event=None) -> None:
-    """Scarica un singolo episodio tramite yt-dlp (con path assoluto)."""
+    """Scarica un singolo episodio usando l'API Python di yt-dlp (path assoluto)."""
+    name = os.path.basename(filepath)
     if os.path.exists(filepath):
-        if progress_cb: progress_cb({"type": "anime_skip", "file": os.path.basename(filepath)})
-        else: print(f"[SKIP] {os.path.basename(filepath)} esiste già, salto download.")
+        if progress_cb: progress_cb({"type": "anime_skip", "file": name})
+        else: print(f"[SKIP] {name} esiste già, salto download.")
         return
+
+    if yt_dlp is None:
+        if progress_cb: progress_cb({"type": "anime_error", "file": name, "message": f"yt-dlp non disponibile per {name}"})
+        else: print(f"[ERRORE] yt-dlp non disponibile per {name}")
+        return
+
     inter = _anime_get_watch_link(ep_url)
     if not inter:
-        if progress_cb: progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Link streaming non trovato per {os.path.basename(filepath)}"})
+        if progress_cb: progress_cb({"type": "anime_error", "file": name, "message": f"Link streaming non trovato per {name}"})
         else: print(f"[WARN] Link streaming non trovato per {ep_url}")
         return
     resolved = _anime_resolve_stream(inter)
     if not resolved:
-        if progress_cb: progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Player non risolto (stream non trovato) per {os.path.basename(filepath)}"})
+        if progress_cb: progress_cb({"type": "anime_error", "file": name, "message": f"Player non risolto (stream non trovato) per {name}"})
         else: print(f"[WARN] Player non risolto per {ep_url}")
         return
     stream_url, referer = resolved
 
-    if progress_cb: progress_cb({"type": "anime_start", "file": os.path.basename(filepath)})
-    else: print(f"[↓] Scarico {os.path.basename(filepath)}")
+    if progress_cb: progress_cb({"type": "anime_start", "file": name})
+    else: print(f"[↓] Scarico {name}")
 
-    cmd = ["yt-dlp", "--newline", "--no-warnings", "--referer", referer, "-o", filepath, stream_url]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    
-    for line in process.stdout:
+    def hook(d):
+        # Lo stop è cooperativo: sollevando qui interrompiamo subito yt-dlp.
         if stop_event and stop_event.is_set():
-            process.terminate()
-            if progress_cb: progress_cb({"type": "anime_stop", "file": os.path.basename(filepath)})
-            break
-            
-        # [download]  15.0% of  350.00MiB at    1.50MiB/s ETA 00:40
-        if progress_cb and "[download]" in line and "%" in line:
-            m = re.search(r"\[download\]\s+([\d\.]+)%\s+of.*?at\s+([^\s]+)\s+ETA\s+([\d:]+)", line)
-            if m:
-                progress_cb({
-                    "type": "anime_progress",
-                    "file": os.path.basename(filepath),
-                    "percent": float(m.group(1)),
-                    "speed": m.group(2),
-                    "eta": m.group(3)
-                })
-                
-    process.wait()
-    if progress_cb:
-        if process.returncode == 0:
-            progress_cb({"type": "anime_done", "file": os.path.basename(filepath)})
-        elif not (stop_event and stop_event.is_set()):
-            progress_cb({"type": "anime_error", "file": os.path.basename(filepath), "message": f"Download fallito (yt-dlp) per {os.path.basename(filepath)}"})
+            raise _AnimeStopped()
+        if d.get("status") == "downloading" and progress_cb:
+            fi, fc = d.get("fragment_index"), d.get("fragment_count")
+            total = d.get("total_bytes") or d.get("total_bytes_estimate")
+            downloaded = d.get("downloaded_bytes", 0)
+            if fc:  # gli HLS non conoscono la dimensione totale: usiamo i frammenti
+                percent = (fi or 0) / fc * 100
+            elif total:
+                percent = downloaded / total * 100
+            else:
+                percent = 0.0
+            progress_cb({
+                "type": "anime_progress",
+                "file": name,
+                "percent": round(percent, 1),
+                "speed": _fmt_speed(d.get("speed")),
+                "eta": _fmt_eta(d.get("eta")),
+            })
+
+    opts = {
+        "outtmpl": filepath,
+        "http_headers": {"Referer": referer},
+        "concurrent_fragment_downloads": ANIME_FRAGMENTS,
+        "retries": 10,
+        "fragment_retries": 10,
+        "quiet": True,
+        "no_warnings": True,
+        "noprogress": True,
+        "progress_hooks": [hook],
+    }
+    if FFMPEG_PATH:
+        opts["ffmpeg_location"] = FFMPEG_PATH
+
+    def _cleanup_partial():
+        for p in (filepath, filepath + ".part"):
+            try: os.remove(p)
+            except OSError: pass
+
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            rc = ydl.download([stream_url])
+        if rc != 0:
+            raise RuntimeError(f"yt-dlp returncode {rc}")
+        if progress_cb: progress_cb({"type": "anime_done", "file": name})
+        else: print(f"[✓] {name} completato.")
+    except _AnimeStopped:
+        _cleanup_partial()
+        if progress_cb: progress_cb({"type": "anime_stop", "file": name})
+    except Exception as e:
+        # yt-dlp può avvolgere l'eccezione di stop in DownloadError: distinguiamo.
+        if stop_event and stop_event.is_set():
+            _cleanup_partial()
+            if progress_cb: progress_cb({"type": "anime_stop", "file": name})
+        elif progress_cb:
+            progress_cb({"type": "anime_error", "file": name, "message": f"Download fallito per {name}: {e}"})
+        else:
+            print(f"[ERRORE] Download fallito per {name}: {e}")
 
 
 def anime_download(url: str, episodi: list[str], selezione: list[int], progress_cb=None, stop_event=None) -> None:
     """Scarica gli episodi selezionati di un anime."""
-    nome_cartella = re.sub(r".*/anime/", "", url).split("/")[0]
+    ok, missing = anime_check_dependencies()
+    if not ok:
+        msg = f"Dipendenze mancanti per il download anime: {', '.join(missing)}."
+        if progress_cb: progress_cb({"type": "error", "message": msg})
+        else: print(f"[ERRORE] {msg}")
+        return
+
+    nome_cartella = _anime_folder_name(url)
     download_dir = Path.home() / "Downloads" / nome_cartella
     download_dir.mkdir(parents=True, exist_ok=True)
 
-    # Filtra episodi per nome base
-    nome_base = re.search(r"/anime/([^/]+)", url)
-    nome_base = nome_base.group(1).split("-")[0].lower() if nome_base else ""
-    episodi_filtrati = [e for e in episodi if nome_base in e.lower()]
-
+    # La lista `episodi` è già limitata allo slug esatto dell'anime da
+    # anime_estrai_episodi, quindi la usiamo direttamente (nessun re-filtro).
     to_download = []
     for i in selezione:
-        if 1 <= i <= len(episodi_filtrati):
+        if 1 <= i <= len(episodi):
             filepath = str(download_dir / f"{i:02d}.mp4")
             if not os.path.exists(filepath):
-                to_download.append((episodi_filtrati[i - 1], filepath))
+                to_download.append((episodi[i - 1], filepath))
 
     # Comunica alla UI quanti episodi verranno scaricati davvero: così la barra
     # mostra un progresso AGGREGATO (X/N) invece di saltare tra i download paralleli.
@@ -607,12 +731,8 @@ def main():
             if not episodi:
                 print(f"[WARN] Nessun episodio trovato per {url}")
                 continue
-            # Filtra per nome base
-            nome_base = re.search(r"/anime/([^/]+)", url)
-            nome_base = nome_base.group(1).split("-")[0].lower() if nome_base else ""
-            episodi_filtrati = [e for e in episodi if nome_base in e.lower()]
-            print(f"\n[ANIME] {len(episodi_filtrati)} episodi trovati per: {url}")
-            sel = parse_intervallo(len(episodi_filtrati))
+            print(f"\n[ANIME] {len(episodi)} episodi trovati per: {url}")
+            sel = parse_intervallo(len(episodi))
             download_queue.append({
                 "kind": "anime",
                 "url": url,

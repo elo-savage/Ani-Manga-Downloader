@@ -14,9 +14,9 @@ except ImportError:
     # ma in genere usciamo se non c'è webview.
 
 from AniManga_Downloader import (
-    _is_anime_link, _is_manga_link, extract_manga_name, 
+    _is_anime_link, _is_manga_link, extract_manga_name,
     anime_estrai_episodi, anime_download, MangaDownloader,
-    MANGA_MAX_THREADS
+    MANGA_MAX_THREADS, _anime_folder_name, anime_check_dependencies
 )
 
 class Api:
@@ -43,18 +43,11 @@ class Api:
             if _is_anime_link(url):
                 episodi = anime_estrai_episodi(url)
                 if episodi:
-                    nome_base = re.search(r"/anime/([^/]+)", url)
-                    nome_base = nome_base.group(1).split("-")[0].lower() if nome_base else ""
-                    episodi_filtrati = [e for e in episodi if nome_base in e.lower()]
-                    
-                    # Usa il nome dalla URL formatto bene
-                    title = url.rstrip("/").split("/")[-1].replace("-", " ").title()
-                    
                     results.append({
                         "kind": "anime",
-                        "title": title,
+                        "title": _anime_folder_name(url),
                         "url": url,
-                        "count": len(episodi_filtrati),
+                        "count": len(episodi),  # già limitati allo slug dell'anime
                         "episodi": episodi  # teniamo traccia
                     })
             elif _is_manga_link(url):

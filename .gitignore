@@ -13,7 +13,10 @@ venv.bak/
 # PyInstaller
 build/
 dist/
+# NB: AniManga_Downloader.spec è tracciato apposta (input di build, non generato):
+# gli script build_mac.sh/build_windows.bat lo richiamano.
 *.spec
+!AniManga_Downloader.spec
 
 # macOS specific
 .DS_Store
