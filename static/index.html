@@ -44,6 +44,7 @@
         --outline: #7e7576;
         --outline-variant: #cfc4c5;
         --error: #ba1a1a;
+        --focus: #1c6ef2;
 
         --xs: 4px;  --sm: 8px;  --md: 16px;
         --gutter: 24px;  --lg: 32px;  --xl: 64px;
@@ -70,6 +71,10 @@
     button { font: inherit; }
     input, textarea { font: inherit; }
     svg { display: inline-block; vertical-align: middle; }
+
+    /* Focus visibile da tastiera (accessibilità): anello blu su bottoni e campi */
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    .btn:focus-visible { outline-offset: 4px; }
 
     /* ============================================================
        TIPOGRAFIA
@@ -191,9 +196,10 @@
     @media (min-width: 1280px) { .cards { grid-template-columns: repeat(3, 1fr); } }
     .empty {
         grid-column: 1 / -1;
-        font-family: var(--font-mono); font-size: 14px; letter-spacing: 0.05em;
-        text-transform: uppercase; color: var(--outline-variant); font-style: italic;
+        font-family: var(--font-mono); font-size: 14px; font-weight: 600; letter-spacing: 0.05em;
+        text-transform: uppercase; color: #5c5556;
     }
+    .empty--error { color: var(--error); }
 
     /* ============================================================
        CARD
@@ -274,7 +280,7 @@
     .progress__fill--error { background: var(--error); }
     .progressbox__foot {
         display: flex; justify-content: space-between;
-        font-family: var(--font-mono); font-size: 10px; color: var(--outline); margin-top: 4px;
+        font-family: var(--font-mono); font-size: 11px; color: var(--text); opacity: 0.72; margin-top: 4px;
     }
 
     .banner {
@@ -288,6 +294,9 @@
     }
 
     .text-error { color: var(--error); }
+    .input-error { border-color: var(--error) !important; }
+    .shake { animation: shake 0.3s; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
     .spin { display: inline-flex; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -347,8 +356,17 @@
     const urlInput = document.getElementById('urlInput');
     const container = document.getElementById('cardsContainer');
 
+    function flashInputError(el) {
+        el.classList.add('input-error', 'shake');
+        setTimeout(() => el.classList.remove('input-error', 'shake'), 600);
+    }
+
     fetchBtn.addEventListener('click', async () => {
-        if (!urlInput.value.trim()) return;
+        if (!urlInput.value.trim()) {
+            urlInput.focus();
+            flashInputError(urlInput);  // campo vuoto: feedback visivo
+            return;
+        }
 
         fetchBtn.disabled = true;
         fetchBtn.innerHTML = 'ANALISI IN CORSO... <span class="spin">' + ICON.sync + '</span>';
@@ -359,6 +377,7 @@
             renderCards(data);
         } catch (e) {
             console.error("Errore durante l'analisi", e);
+            container.innerHTML = '<div class="empty empty--error">Errore durante l\'analisi. Controlla i link o la connessione e riprova.</div>';
         } finally {
             fetchBtn.disabled = false;
             fetchBtn.innerHTML = 'ANALIZZA LINK ' + ICON.bolt;
@@ -451,8 +470,29 @@
         }
 
         // --- Avvia (o riprova) il download ---
-        const start = parseInt(document.getElementById(`start_${index}`).value, 10) || 1;
-        const end   = parseInt(document.getElementById(`end_${index}`).value, 10) || 1;
+        const max = (currentData[index] && currentData[index].count) || 1;
+        const startEl = document.getElementById(`start_${index}`);
+        const endEl   = document.getElementById(`end_${index}`);
+        const statusLeft = document.getElementById(`status_left_${index}`);
+
+        let start = parseInt(startEl.value, 10);
+        let end   = parseInt(endEl.value, 10);
+        if (!Number.isInteger(start)) start = 1;
+        if (!Number.isInteger(end))   end = max;
+        // clamp nell'intervallo valido [1, max]
+        start = Math.min(Math.max(start, 1), max);
+        end   = Math.min(Math.max(end, 1), max);
+
+        if (start > end) {
+            statusLeft.textContent = 'Intervallo non valido: DA deve essere ≤ A';
+            statusLeft.classList.add('text-error');
+            flashInputError(startEl);
+            flashInputError(endEl);
+            return;  // non avviare: evita falsi "COMPLETATO"
+        }
+        statusLeft.classList.remove('text-error');
+        startEl.value = start;  // riscrive gli eventuali valori clampati
+        endEl.value = end;
 
         card.dataset.state = 'downloading';
         card.setAttribute('data-active', 'true');
@@ -465,6 +505,7 @@
         badge.className = 'badge badge--active';
 
         fill.className = 'progress__fill stripe-pattern';
+        statusLeft.textContent = 'Avvio download…';  // finché non arriva il 1° progresso
 
         await pywebview.api.start_download(currentData[index], start, end, index);
     }
