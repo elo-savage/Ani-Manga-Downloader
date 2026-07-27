@@ -443,7 +443,10 @@ class MangaDownloader:
         seen = set()
         chapters: list[tuple[str, str]] = []
         for a in anchors:
-            text = a.get_text(strip=True)
+            # Separatore " ": il link contiene "Capitolo N" seguito dalla data in
+            # un elemento figlio; senza separatore verrebbero incollati (es. il
+            # capitolo 1 con data 27/8 -> "0127"), falsando numero e ordinamento.
+            text = a.get_text(" ", strip=True)
             if re.search(r"\bprimo capitolo\b", text, re.IGNORECASE) or \
                re.search(r"\bultimo capitolo\b", text, re.IGNORECASE):
                 continue
@@ -558,21 +561,15 @@ class MangaDownloader:
         if self.stop_event and self.stop_event.is_set():
             return
 
-        cleaned_slug = chap_slug
+        # Lo slug è già il numero reale del capitolo (dal testo "Capitolo N":
+        # es. "01", "209", "1.5"). Normalizziamo solo zeri iniziali e decimali
+        # interi: "01" -> "1", "209" -> "209", "1.0" -> "1", "1.5"/"1-5" -> "1.5".
+        cleaned_slug = chap_slug.replace("-", ".")
         try:
-            num = float(chap_slug)
-            # MangaWorld moltiplica spesso i capitoli per 100 (es. 100 = cap 1, 150 = cap 1.5)
-            # Se il numero è grande e intero, lo dividiamo per ottenere il vero capitolo.
-            if num >= 100:
-                real_num = num / 100
-                if real_num.is_integer():
-                    cleaned_slug = str(int(real_num))
-                else:
-                    cleaned_slug = str(real_num)
-            elif num.is_integer():
-                cleaned_slug = str(int(num))
+            num = float(cleaned_slug)
+            cleaned_slug = str(int(num)) if num.is_integer() else str(num)
         except ValueError:
-            pass
+            cleaned_slug = chap_slug
 
         if re.match(r"^\d+(\.\d+)?$", cleaned_slug):
             pdf_filename = f"Capitolo_{cleaned_slug}.pdf"
