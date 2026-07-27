@@ -18,14 +18,14 @@ Attualmente supporta nativamente il download dai seguenti portali italiani:
 
 - **Interfaccia Neo-Brutalista:** Design pulito, moderno e responsivo.
 - **Selezione Intelligente:** Puoi scegliere esattamente quali episodi o capitoli scaricare tramite un selettore di range (es: `1-10, 15`).
-- **Download in Background:** Visualizza il progresso di ogni singolo file in tempo reale con una barra di avanzamento dedicata.
+- **Download in Parallelo:** Puoi analizzare e scaricare più opere insieme (es. un anime e un manga), ognuna con la propria barra di avanzamento in tempo reale.
 - **Multi-Piattaforma:** Il codice può essere compilato per creare eseguibili sia per macOS che per Windows.
 
 ## 🚀 Come si usa?
 
 1. **Avvia l'app:** Lancia l'eseguibile scaricato oppure esegui il programma da terminale.
 2. **Incolla il Link:** Devi usare il link della **pagina principale dell'anime o del manga** (quella dove c'è la trama e la lista di tutti gli episodi/capitoli).
-   - Esempio AnimeSaturn: `https://www.animesaturn.cx/anime/One-Piece-Sub-ITA-a`
+   - Esempio AnimeSaturn: `https://www.animesaturn.net/anime/one-piece-PmTvj`
    - Esempio MangaWorld: `https://www.mangaworld.mx/manga/1708/one-piece`
    Incolla l'URL nella barra di ricerca dell'applicazione.
 3. **Analizza:** Clicca sul pulsante per analizzare il link. L'app troverà in automatico tutti i capitoli o episodi disponibili.
@@ -34,6 +34,14 @@ Attualmente supporta nativamente il download dai seguenti portali italiani:
 ## 🛠️ Installazione (Per Sviluppatori)
 
 Se vuoi smanettare con il codice, ecco come fare:
+
+### 📋 Prerequisiti
+- **Python 3.10+**
+- **ffmpeg** installato e raggiungibile nel PATH — è necessario per assemblare gli stream degli anime (HLS):
+  - macOS: `brew install ffmpeg`
+  - Windows: `choco install ffmpeg` (oppure scaricalo da [gyan.dev](https://www.gyan.dev/ffmpeg/builds/))
+  - Linux: `sudo apt install ffmpeg`
+- `yt-dlp` viene installato automaticamente da `requirements.txt`.
 
 ```bash
 # 1. Clona il repository
@@ -51,6 +59,8 @@ python3 app.py
 Se vuoi creare un'app nativa `.app` o `.exe` da distribuire senza far usare il terminale:
 - **Su macOS:** Lancia lo script `./build_mac.sh` dal tuo terminale. Troverai l'app macOS nella cartella `dist`.
 - **Su Windows:** Fai doppio clic sul file `build_windows.bat` lavorando da un PC Windows. Troverai il tuo `.exe` nella cartella `dist`.
+
+> **⚠️ Nota per la distribuzione:** l'app impacchettata include ffmpeg, ma per un bundle che funzioni **su altri computer** serve un **ffmpeg statico** (quello di Homebrew è collegato dinamicamente e non è portabile). Esporta `FFMPEG_BIN=/percorso/ffmpeg-statico` prima di lanciare lo script di build. L'app compilata non è firmata: su macOS apri con **tasto destro → Apri** la prima volta.
 
 ## 🎵 Vibecoding
 
