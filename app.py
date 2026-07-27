@@ -22,17 +22,19 @@ from AniManga_Downloader import (
 class Api:
     def __init__(self):
         self.window = None
-        self.stop_events = {}
-        self._dl_thread = None
+        self.stop_events = {}   # index (str) -> threading.Event
+        self._threads = {}      # index (str) -> Thread
 
     def set_window(self, window):
         self.window = window
 
-    def on_progress(self, data):
-        """Callback chiamata dal downloader. Invia eventi al JS."""
+    def _emit(self, index, data):
+        """Invia un evento di progresso al JS, taggato con l'indice della card,
+        così ogni download aggiorna la propria scheda anche in parallelo."""
         if self.window:
-            # webview.evaluate_js richiede una stringa sicura
-            safe_json = json.dumps(data)
+            payload = dict(data)
+            payload["index"] = index
+            safe_json = json.dumps(payload)
             self.window.evaluate_js(f"window.updateProgress({safe_json})")
 
     def fetch_info(self, text):
@@ -67,66 +69,79 @@ class Api:
                     dl.close()
         return results
 
-    def start_download(self, item, start_idx, end_idx):
-        """Avvia il download in un thread separato."""
-        if self._dl_thread and self._dl_thread.is_alive():
-            return {"status": "error", "message": "A download is already running."}
-            
+    def start_download(self, item, start_idx, end_idx, index=0):
+        """Avvia il download di una scheda in un thread dedicato.
+
+        Ogni scheda (index) ha il proprio thread e stop_event, così più opere
+        (es. un anime e un manga) possono scaricare in parallelo."""
+        index = str(index)
+        existing = self._threads.get(index)
+        if existing and existing.is_alive():
+            return {"status": "error", "message": "Download già in corso per questa scheda."}
+
         stop_event = threading.Event()
-        self.stop_events["current"] = stop_event
-        
-        # Generiamo un thread
-        self._dl_thread = threading.Thread(
+        self.stop_events[index] = stop_event
+        thread = threading.Thread(
             target=self._download_worker,
-            args=(item, start_idx, end_idx, stop_event),
+            args=(item, start_idx, end_idx, stop_event, index),
             daemon=True
         )
-        self._dl_thread.start()
+        self._threads[index] = thread
+        thread.start()
         return {"status": "started"}
-        
-    def stop_download(self):
-        """Ferma il download corrente."""
-        if "current" in self.stop_events:
-            self.stop_events["current"].set()
+
+    def stop_download(self, index=None):
+        """Ferma una scheda specifica, oppure tutte se index è None (chiusura app)."""
+        if index is None:
+            for ev in self.stop_events.values():
+                ev.set()
+            return {"status": "stopped"}
+        index = str(index)
+        ev = self.stop_events.get(index)
+        if ev:
+            ev.set()
             return {"status": "stopped"}
         return {"status": "idle"}
 
-    def _download_worker(self, item, start_idx, end_idx, stop_event):
+    def _download_worker(self, item, start_idx, end_idx, stop_event, index):
+        # Callback di progresso legata a questa scheda: ogni evento porta con sé
+        # il proprio index, quindi i download paralleli non si sovrascrivono.
+        cb = lambda data: self._emit(index, data)
         kind = item.get("kind")
         url = item.get("url")
         # 1-based indices to list
         selection = list(range(start_idx, end_idx + 1))
-        
+
         try:
             if kind == "anime":
-                anime_download(url, item.get("episodi", []), selection, progress_cb=self.on_progress, stop_event=stop_event)
+                anime_download(url, item.get("episodi", []), selection, progress_cb=cb, stop_event=stop_event)
             elif kind == "manga":
                 name = extract_manga_name(url)
                 out = Path.home() / "Downloads" / f"{name}_PDF"
-                dl = MangaDownloader(url, out, MANGA_MAX_THREADS, progress_cb=self.on_progress, stop_event=stop_event)
+                dl = MangaDownloader(url, out, MANGA_MAX_THREADS, progress_cb=cb, stop_event=stop_event)
                 try:
                     chapters = item.get("chapters", [])
                     selected = [idx for idx in selection if 1 <= idx <= len(chapters)]
                     total_selected = len(selected)
-                    
+
                     for pos, idx in enumerate(selected, 1):
                         if stop_event.is_set(): break
                         slug, chapter_url = chapters[idx - 1]
-                        
+
                         # Notifica UI del progresso tra capitoli
-                        self.on_progress({
+                        cb({
                             "type": "manga_chapter_progress",
                             "chapter": slug,
                             "current_chapter": pos,
                             "total_chapters": total_selected,
                             "message": f"Capitolo {slug} ({pos}/{total_selected})"
                         })
-                        
+
                         try:
                             dl.download_chapter(slug, chapter_url, idx)
                         except Exception as ch_err:
                             # Errore su un singolo capitolo: logga ma continua con gli altri
-                            self.on_progress({
+                            cb({
                                 "type": "manga_chapter_error",
                                 "chapter": slug,
                                 "current_chapter": pos,
@@ -137,10 +152,10 @@ class Api:
                 finally:
                     dl.close()
                     if not stop_event.is_set():
-                        self.on_progress({"type": "manga_series_done", "name": name})
-                        
+                        cb({"type": "manga_series_done", "name": name})
+
         except Exception as e:
-            self.on_progress({"type": "error", "message": str(e)})
+            cb({"type": "error", "message": str(e)})
 
 
 def main():

@@ -434,7 +434,7 @@
 
         if (state === 'downloading') {
             // --- Ferma il download ---
-            await pywebview.api.stop_download();
+            await pywebview.api.stop_download(index);
 
             card.dataset.state = 'idle';
             card.removeAttribute('data-active');
@@ -466,7 +466,7 @@
 
         fill.className = 'progress__fill stripe-pattern';
 
-        await pywebview.api.start_download(currentData[index], start, end);
+        await pywebview.api.start_download(currentData[index], start, end, index);
     }
 
     function setCardCompleted(index) {
@@ -539,10 +539,12 @@
     }
 
     window.updateProgress = function (data) {
-        const activeCard = document.querySelector('article[data-active="true"]');
+        // Instradiamo l'evento alla card indicata dal backend (index), così
+        // più download in parallelo aggiornano ciascuno la propria scheda.
+        const index = (data.index !== undefined && data.index !== null) ? String(data.index) : null;
+        if (index === null) return;
+        const activeCard = document.getElementById(`card_${index}`);
         if (!activeCard) return;
-
-        const index = activeCard.id.split('_')[1];
         const fill        = document.getElementById(`progress_${index}`);
         const statusLeft  = document.getElementById(`status_left_${index}`);
         const statusRight = document.getElementById(`status_right_${index}`);
