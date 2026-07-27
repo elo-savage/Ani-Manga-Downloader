@@ -31,6 +31,28 @@ Attualmente supporta nativamente il download dai seguenti portali italiani:
 3. **Analizza:** Clicca sul pulsante per analizzare il link. L'app troverà in automatico tutti i capitoli o episodi disponibili.
 4. **Seleziona e Scarica:** Inserisci il range (es. `1-5` per i primi 5 episodi) e clicca Scarica! Troverai i tuoi file scaricati e ordinati automaticamente sul tuo computer.
 
+## 📥 Download (utenti finali)
+
+Scarica il pacchetto per il tuo sistema dalla pagina [**Releases**](https://github.com/elo-savage/Ani-Manga-Downloader/releases/latest):
+- 🍏 **macOS (Apple Silicon / M1–M4):** `AniManga_Downloader_macOS_AppleSilicon.zip`
+- 🍏 **macOS (Intel):** `AniManga_Downloader_macOS_Intel.zip`
+- 🪟 **Windows:** `AniManga_Downloader_Windows.zip`
+
+Estrai lo zip e avvia l'app: **ffmpeg è già incluso**, non devi installare nulla.
+
+### 🍏 Prima apertura su macOS (avviso "app non verificata")
+L'app non è firmata con un account Apple a pagamento, quindi al primo avvio macOS mostra un avviso. Per aprirla:
+1. **Tasto destro** (o Ctrl+clic) sull'app → **Apri** → poi di nuovo **Apri** nella finestra che compare.
+2. In alternativa: **Impostazioni di Sistema → Privacy e sicurezza**, scorri fino al messaggio sull'app e clicca **Apri comunque**.
+
+Se compare *"l'app è danneggiata e non può essere aperta"* è solo la quarantena di macOS: apri il Terminale ed esegui una volta (sostituisci il percorso con quello reale):
+```bash
+xattr -cr /percorso/di/AniManga_Downloader.app
+```
+
+### 🪟 Prima apertura su Windows (SmartScreen)
+Windows può mostrare *"Windows ha protetto il PC"*. Clicca **Ulteriori informazioni → Esegui comunque**.
+
 ## 🛠️ Installazione (Per Sviluppatori)
 
 Se vuoi smanettare con il codice, ecco come fare:

@@ -1,0 +1,95 @@
+name: Build & attach release binaries
+
+# Compila i bundle portabili (macOS Apple Silicon, macOS Intel, Windows) con
+# un ffmpeg statico incluso e li allega alla release indicata.
+#
+# Come lanciarlo: dalla tab "Actions" del repo -> "Build & attach release
+# binaries" -> "Run workflow" e indica il tag della release (default v1.1.0).
+# Parte anche automaticamente quando si pusha un tag "v*".
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag della release a cui allegare i binari"
+        required: true
+        default: "v1.1.0"
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            label: macOS Apple Silicon (arm64)
+            artifact: AniManga_Downloader_macOS_AppleSilicon
+          - os: macos-13
+            label: macOS Intel (x86_64)
+            artifact: AniManga_Downloader_macOS_Intel
+          - os: windows-latest
+            label: Windows (x64)
+            artifact: AniManga_Downloader_Windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller imageio-ffmpeg
+
+      - name: Resolve static ffmpeg (imageio-ffmpeg)
+        shell: bash
+        run: |
+          FF=$(python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())")
+          echo "imageio ffmpeg: $FF"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp "$FF" ffmpeg.exe
+            echo "FFMPEG_BIN=$(pwd)/ffmpeg.exe" >> "$GITHUB_ENV"
+          else
+            cp "$FF" ffmpeg
+            chmod +x ffmpeg
+            echo "FFMPEG_BIN=$(pwd)/ffmpeg" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build with PyInstaller
+        shell: bash
+        run: pyinstaller --noconfirm AniManga_Downloader.spec
+
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          codesign --force --deep -s - dist/AniManga_Downloader.app || true
+          ditto -c -k --keepParent dist/AniManga_Downloader.app "${{ matrix.artifact }}.zip"
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist/AniManga_Downloader -DestinationPath "${{ matrix.artifact }}.zip"
+
+      - name: Upload as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}.zip
+
+      - name: Attach to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: gh release upload "$TAG" "${{ matrix.artifact }}.zip" --clobber
